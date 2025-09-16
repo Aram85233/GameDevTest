@@ -1,6 +1,7 @@
 ﻿using StackExchange.Redis;
 using System.Text;
 using TileMap.Objects;
+using TileMap.Regions;
 using TileMap.Surface;
 
 namespace TileMap.ConsoleApp
@@ -44,10 +45,15 @@ namespace TileMap.ConsoleApp
             var surface = new SurfaceLayer(10, 10, TileType.Plain);
             var mapManager = new MapLayerManager(surface, redis);
 
+            var regions = new RegionLayer(10, 10, 4);
+
             // Подписка на события
-            mapManager.Objects.ObjectCreated += obj => Console.WriteLine($"Создан объект: {obj.Id}");
-            mapManager.Objects.ObjectUpdated += obj => Console.WriteLine($"Обновлён объект: {obj.Id}");
-            mapManager.Objects.ObjectDeleted += id => Console.WriteLine($"Удалён объект: {id}");
+            mapManager.Objects.ObjectCreated += obj =>
+                Console.WriteLine($"[Событие] Создан объект: {obj.Id} (регион {regions.GetRegionId(obj.X, obj.Y)})");
+            mapManager.Objects.ObjectUpdated += obj =>
+                Console.WriteLine($"[Событие] Обновлён объект: {obj.Id}");
+            mapManager.Objects.ObjectDeleted += id =>
+                Console.WriteLine($"[Событие] Удалён объект: {id}");
 
             // Сценарий 1: корректное размещение
             var house = new GameObject("house_1", 2, 2, 3, 3);
@@ -74,6 +80,16 @@ namespace TileMap.ConsoleApp
             // Вывод карты с объектами
             Console.WriteLine("Карта с объектами:");
             mapManager.PrintMapWithObjects();
+
+            Console.WriteLine();
+            Console.WriteLine("Проверка регионов:");
+            Console.WriteLine($"Тайл (2,2) принадлежит региону {regions.GetRegionId(2, 2)}");
+            Console.WriteLine($"Тайл (9,9) принадлежит региону {regions.GetRegionId(9, 9)}");
+
+            Console.WriteLine();
+            Console.WriteLine("🔹 Регионы в области (0,0)-(5,5):");
+            foreach (var reg in regions.GetRegionsInArea(0, 0, 5, 5))
+                Console.WriteLine($" - {reg.Id}: {reg.Name}");
         }
     }
 }
