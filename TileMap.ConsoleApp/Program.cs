@@ -1,5 +1,7 @@
 ﻿using StackExchange.Redis;
 using System.Text;
+using TileMap.Contracts.Events;
+using TileMap.Networking;
 using TileMap.Objects;
 using TileMap.Regions;
 using TileMap.Surface;
@@ -37,9 +39,10 @@ namespace TileMap.ConsoleApp
             //Console.WriteLine("\n=== Конец теста ===");
 
 
+           
 
             // Подключение к Redis (замените на ваше)
-            var redis = ConnectionMultiplexer.Connect("redis:6379").GetDatabase();
+            var redis = ConnectionMultiplexer.Connect("localhost").GetDatabase();
 
             // Создаём поверхность и менеджер карты
             var surface = new SurfaceLayer(10, 10, TileType.Plain);
@@ -47,13 +50,29 @@ namespace TileMap.ConsoleApp
 
             var regions = new RegionLayer(10, 10, 4);
 
+            var provider = new MapQueryProvider(mapManager, regions);
+            var udpServer = new MapUdpServer(provider, port: 9050);
+
             // Подписка на события
             mapManager.Objects.ObjectCreated += obj =>
-                Console.WriteLine($"[Событие] Создан объект: {obj.Id} (регион {regions.GetRegionId(obj.X, obj.Y)})");
+            {
+                var ev = new ObjectEventMessage { Id = obj.Id, X = obj.X, Y = obj.Y, Width = obj.Width, Height = obj.Height };
+                udpServer.BroadcastObjectEvent(NetMessageType.ObjectAdded, ev);
+            };
             mapManager.Objects.ObjectUpdated += obj =>
-                Console.WriteLine($"[Событие] Обновлён объект: {obj.Id}");
+            {
+                var ev = new ObjectEventMessage { Id = obj.Id, X = obj.X, Y = obj.Y, Width = obj.Width, Height = obj.Height };
+                udpServer.BroadcastObjectEvent(NetMessageType.ObjectUpdated, ev);
+            };
             mapManager.Objects.ObjectDeleted += id =>
-                Console.WriteLine($"[Событие] Удалён объект: {id}");
+            {
+                var ev = new ObjectEventMessage { Id = id, X = 0, Y = 0, Width = 0, Height = 0 };
+                udpServer.BroadcastObjectEvent(NetMessageType.ObjectDeleted, ev);
+            };
+
+            // Запуск polling loop в отдельном потоке
+            var cts = new CancellationTokenSource();
+            Task.Run(() => udpServer.RunPollLoop(cts.Token));
 
             // Сценарий 1: корректное размещение
             var house = new GameObject("house_1", 2, 2, 3, 3);
@@ -87,9 +106,16 @@ namespace TileMap.ConsoleApp
             Console.WriteLine($"Тайл (9,9) принадлежит региону {regions.GetRegionId(9, 9)}");
 
             Console.WriteLine();
-            Console.WriteLine("🔹 Регионы в области (0,0)-(5,5):");
-            foreach (var reg in regions.GetRegionsInArea(0, 0, 5, 5))
+            Console.WriteLine("🔹 Регионы в области (0,0)-(8,2):");
+            foreach (var reg in regions.GetRegionsInArea(0, 0, 8, 2))
                 Console.WriteLine($" - {reg.Id}: {reg.Name}");
+
+
+            mapManager.Objects.RemoveObject(house.Id);
+            mapManager.Objects.RemoveObject(smallHouse.Id);
+
+            cts.Cancel(); 
+            udpServer.Dispose();
         }
     }
 }
