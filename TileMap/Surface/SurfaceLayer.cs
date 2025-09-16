@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 
-namespace TileMap
+namespace TileMap.Surface
 {
     public sealed class SurfaceLayer
     {
@@ -99,6 +99,26 @@ namespace TileMap
                 }
             }
             return true;
+        }
+
+        public void Print()
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                int rowStart = y * Width;
+                for (int x = 0; x < Width; x++)
+                {
+                    char symbol = tiles[rowStart + x] switch
+                    {
+                        (byte)TileType.Plain => '.',
+                        (byte)TileType.Mountain => '^',
+                        (byte)TileType.Water => '~',
+                        _ => '?'
+                    };
+                    Console.Write(symbol);
+                }
+                Console.WriteLine();
+            }
         }
 
         public long EstimatedMemoryBytes() => tiles.Length;
