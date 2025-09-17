@@ -1,20 +1,32 @@
-version: '3.9'
+﻿version: "3.9"
 
 services:
-  tilemap-app:
+  tilemap-server:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: tilemap-app
+      dockerfile: TileMap.ConsoleApp/Dockerfile
+    container_name: tilemap-server
+    environment:
+      - DOTNET_RUNNING_IN_CONTAINER=true
+    ports:
+      - "9050:9050" # порт сервера UDP
     depends_on:
       - redis
+
+  tilemap-client:
+    build:
+      context: .
+      dockerfile: MapUdpClient/Dockerfile
+    container_name: tilemap-client
     environment:
+      - DOTNET_RUNNING_IN_CONTAINER=true
       - REDIS_CONNECTION=redis:6379
-    ports:
-      - "5000:5000"
+    depends_on:
+      - redis
+      - tilemap-server
 
   redis:
     image: redis:7
-    container_name: redis
+    container_name: tilemap-redis
     ports:
       - "6379:6379"

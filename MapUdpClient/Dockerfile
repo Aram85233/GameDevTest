@@ -10,20 +10,22 @@ WORKDIR /app
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["TileMap.ConsoleApp/TileMap.ConsoleApp.csproj", "TileMap.ConsoleApp/"]
+COPY ["MapUdpClient/TileMap.MapUdpClient.csproj", "MapUdpClient/"]
+COPY ["Contracts/TileMap.Contracts.csproj", "Contracts/"]
+COPY ["Networking/TileMap.Networking.csproj", "Networking/"]
 COPY ["TileMap/TileMap.csproj", "TileMap/"]
-RUN dotnet restore "./TileMap.ConsoleApp/TileMap.ConsoleApp.csproj"
+RUN dotnet restore "./MapUdpClient/TileMap.MapUdpClient.csproj"
 COPY . .
-WORKDIR "/src/TileMap.ConsoleApp"
-RUN dotnet build "./TileMap.ConsoleApp.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/MapUdpClient"
+RUN dotnet build "./TileMap.MapUdpClient.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # This stage is used to publish the service project to be copied to the final stage
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./TileMap.ConsoleApp.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./TileMap.MapUdpClient.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "TileMap.ConsoleApp.dll"]
+ENTRYPOINT ["dotnet", "TileMap.MapUdpClient.dll"]

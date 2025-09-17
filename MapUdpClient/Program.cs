@@ -8,13 +8,21 @@ class Program
 
         var client = new MapUdpClient();
 
-        client.Connect("127.0.0.1", 9050);
+        client.Connect("tilemap-server", 9050);
 
-        Console.WriteLine("Нажмите Enter для выхода...");
-        while (!Console.KeyAvailable)
+
+        var cts = new CancellationTokenSource();
+
+        Console.CancelKeyPress += (s, e) =>
+        {
+            e.Cancel = true;
+            cts.Cancel();
+        };
+
+        while (!cts.Token.IsCancellationRequested)
         {
             client.PollEvents();
-            Thread.Sleep(5); // лёгкая пауза, чтобы не перегружать CPU
+            Thread.Sleep(5);
         }
 
         Console.WriteLine("👋 Клиент завершил работу");

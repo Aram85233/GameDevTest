@@ -42,7 +42,7 @@ namespace TileMap.ConsoleApp
            
 
             // Подключение к Redis (замените на ваше)
-            var redis = ConnectionMultiplexer.Connect("localhost").GetDatabase();
+            var redis = ConnectionMultiplexer.Connect("redis:6379").GetDatabase();
 
             // Создаём поверхность и менеджер карты
             var surface = new SurfaceLayer(10, 10, TileType.Plain);
@@ -113,13 +113,21 @@ namespace TileMap.ConsoleApp
                 Console.WriteLine($" - {reg.Id}: {reg.Name}");
 
 
-            mapManager.Objects.RemoveObject(house.Id);
-            mapManager.Objects.RemoveObject(smallHouse.Id);
+            //mapManager.Objects.RemoveObject(house.Id);
+            mapManager.Objects.RemoveObject(smallHouse.Id); // Остовляю 1 объект чтобы в клинте было видно
 
-            cts.Cancel(); 
-            udpServer.Dispose();
+            Console.CancelKeyPress += (s, e) =>
+            {
+                udpServer.Dispose();
+                e.Cancel = true;
+                cts.Cancel();
+            };
 
-            Console.ReadLine();
+            // Ждём сигнала остановки
+            cts.Token.WaitHandle.WaitOne();
+
+
+            Console.WriteLine("\n=== Конец теста ===");
         }
     }
 }

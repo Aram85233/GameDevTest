@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "MapUdpClient": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
