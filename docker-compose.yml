@@ -20,9 +20,7 @@ services:
     container_name: tilemap-client
     environment:
       - DOTNET_RUNNING_IN_CONTAINER=true
-      - REDIS_CONNECTION=redis:6379
     depends_on:
-      - redis
       - tilemap-server
 
   redis:
