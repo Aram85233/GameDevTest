@@ -74,6 +74,8 @@ namespace TileMap.ConsoleApp
             var cts = new CancellationTokenSource();
             Task.Run(() => udpServer.RunPollLoop(cts.Token));
 
+            Console.WriteLine("Сервер запущен на порту 9050");
+
             // Сценарий 1: корректное размещение
             var house = new GameObject("house_1", 2, 2, 3, 3);
             Console.WriteLine(mapManager.TryPlaceObject(house, TileType.Mountain)
@@ -116,6 +118,8 @@ namespace TileMap.ConsoleApp
 
             cts.Cancel(); 
             udpServer.Dispose();
+
+            Console.ReadLine();
         }
     }
 }
